@@ -17,8 +17,11 @@ void Boids::updateBehavior(MethodTypes type, UpdateRule rule)
         break;
     case LEADER:
         break;
-    // default:
-    //     break;
+    case CIRCLE:
+        updateParam(type, rule);
+        break;
+    default:
+        break;
     }
 }
 //TODO:Ex2 
@@ -49,8 +52,8 @@ void Boids::updateParam(MethodTypes type, UpdateRule rule){
         velocities = last_velocities + h * accelerations;
         break;      
     }     
-    // default:
-    //     break;
+    default:
+        break;
     }
 }
 
@@ -62,6 +65,9 @@ VectorXT Boids::updateAcc(VectorXT x0, MethodTypes currentMethod){
             a(2*i) = 0;
             a(2*i+1) = 9.8;
         }
+    }
+    if(currentMethod == CIRCLE){
+        a = -x0;
     }
     return a;
 }

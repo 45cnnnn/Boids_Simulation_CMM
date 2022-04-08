@@ -11,7 +11,7 @@ using Matrix = Eigen::Matrix<T, n, m, 0, n, m>;
 
 // add more for yours
 enum MethodTypes {
-        FREEFALL=0, SEPARATION=1, ALIGNMENT=2, COHESION=3, LEADER=4
+        FREEFALL=0, SEPARATION=1, ALIGNMENT=2, COHESION=3, LEADER=4, CIRCLE=5,
     };
 enum UpdateRule{
     EXPLICIT_EULER, SYMPLECTIC_EULER, EXPLICIT_MIDPOINT
@@ -35,7 +35,7 @@ private:
     bool update = false;
     
     /*Hyperparameters*/
-    double h = 0.1;                    //step size
+    double h = 0.01;                    //step size
     // UpdateMethod updateMethod = EXPLICIT_EULER;           // 0: implicit Euler; 1: sympletic Euler; 2: explicit midpoint;
 
     /*Hyperparameters_end*/
@@ -43,6 +43,9 @@ public:
     Boids() :n(1) {}
     Boids(int n) :n(n) {
         initializePositions();
+    }
+    Boids(int n, MethodTypes type) :n(n){
+        initializePositions(type);
     }
     ~Boids() {}
 
@@ -53,6 +56,23 @@ public:
         positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}); 
         velocities = VectorXT::Zero(n * dim);
         accelerations = VectorXT::Zero(n * dim);;
+    }
+    void initializePositions(MethodTypes type)
+    {
+        if(type == CIRCLE){
+            positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}); 
+            velocities = VectorXT::Zero(n * dim);
+            for(int i = 0; i < n; i++){
+                velocities(2*i) = -positions(2*i+1);
+                velocities(2*i+1) = positions(2*i);
+            }
+            accelerations = VectorXT::Zero(n * dim);;
+        }
+        else{
+        positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}); 
+        velocities = VectorXT::Zero(n * dim);
+        accelerations = VectorXT::Zero(n * dim);;            
+        }
     }
 
     // void updateBehavior(MethodTypes type)

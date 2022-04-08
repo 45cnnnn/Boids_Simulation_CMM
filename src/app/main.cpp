@@ -32,7 +32,7 @@ public:
         if(std::chrono::duration_cast<std::chrono::microseconds>(now-lastFrame).count() >= 10./60. * 1.e6)
         {
             if(keyDown[GLFW_KEY_R])
-                boids.initializePositions();
+                boids.initializePositions(currentMethod); // Everytime method is changed, press R to re-initialization
             if(keyDown[GLFW_KEY_SPACE])
                 boids.pause();
             if(keyDown[GLFW_KEY_ESCAPE])
@@ -45,13 +45,14 @@ public:
 
         using namespace ImGui;
 
-       const char* names[] = {"FreeFall", "Separation", "Alignment", "Cohesion", "Leading"};
+       const char* names[] = {"FreeFall", "Separation", "Alignment", "Cohesion", "Leading", "Circle"};
        Begin("Menu");
-       Combo("Boids Behavior", (int*)&currentMethod, names, 5);
+       Combo("Boids Behavior", (int*)&currentMethod, names, 6);
        End();
     }
 
     void drawNanoVG() override {
+
         
         boids.updateBehavior(currentMethod, updateRule);
         
@@ -59,7 +60,7 @@ public:
 
         auto shift_01_to_screen = [](TV pos_01, T scale, T width, T height)
         {
-            return TV(0.5 * (0.5 - scale) * width + scale * pos_01[0] * width, 0.5 * (0.5 - scale) * height + scale * pos_01[1] * height);
+            return TV(0.5  * width + scale * pos_01[0] * width, 0.5 * height + scale * pos_01[1] * height);
         };
 
         for(int i = 0; i < boids.getParticleNumber(); i++)
@@ -73,8 +74,15 @@ public:
             T scale = 0.3;
             TV screen_pos = shift_01_to_screen(TV(pos[0], pos[1]), scale, width, height);
             nvgCircle(vg, screen_pos[0], screen_pos[1], 2.f);
+            nvgCircle(vg, 0.5  * width, 0.5 * height, 5.f);
             nvgFillColor(vg, COLOR_OUT);
             nvgFill(vg);
+
+            //Origin
+            nvgBeginPath(vg);
+            nvgCircle(vg, 0.5  * width, 0.5 * height, 5.f);
+            nvgFillColor(vg, COLOR_IN);
+            nvgFill(vg);            
 
         }
 
@@ -112,13 +120,13 @@ private:
     // UpdateRule updateRule = EXPLICIT_EULER;
     // UpdateRule updateRule = SYMPLECTIC_EULER;
     UpdateRule updateRule = EXPLICIT_MIDPOINT;
-    Boids boids = Boids(40);
+    Boids boids = Boids(40,currentMethod);
     std::chrono::high_resolution_clock::time_point lastFrame;
 };
 
 int main(int, char**)
 {
-    int width = 720;
+    int width = 960;
     int height = 720;
     std::cout << " main " << std::endl;
     TestApp app(width, height, "Assignment 3 Boids");
