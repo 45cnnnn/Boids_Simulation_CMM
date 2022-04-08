@@ -40,7 +40,7 @@ public:
             lastFrame = now;
         }
     }
-
+    //TODO : add update rules in GUI
     void drawImGui() override {
 
         using namespace ImGui;
@@ -53,7 +53,7 @@ public:
 
     void drawNanoVG() override {
         
-        boids.updateBehavior(currentMethod);
+        boids.updateBehavior(currentMethod, updateRule);
         
         VectorXT boids_pos = boids.getPositions();
 
@@ -109,7 +109,9 @@ private:
 private:
 
     MethodTypes currentMethod = FREEFALL;
-
+    // UpdateRule updateRule = EXPLICIT_EULER;
+    // UpdateRule updateRule = SYMPLECTIC_EULER;
+    UpdateRule updateRule = EXPLICIT_MIDPOINT;
     Boids boids = Boids(40);
     std::chrono::high_resolution_clock::time_point lastFrame;
 };
