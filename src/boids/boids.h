@@ -11,7 +11,7 @@ using Matrix = Eigen::Matrix<T, n, m, 0, n, m>;
 
 // add more for yours
 enum MethodTypes {
-        FREEFALL=0, SEPARATION=1, ALIGNMENT=2, COHESION=3, LEADER=4, CIRCLE=5,
+        FREEFALL=0, SEPARATION=1, ALIGNMENT=2, COHESION=3, LEADER=4, CIRCLE=5, COLLISION_AVOIDANCE=6
     };
 enum UpdateRule{
     EXPLICIT_EULER, SYMPLECTIC_EULER, EXPLICIT_MIDPOINT
@@ -35,8 +35,9 @@ private:
     bool update = false;
     
     /*Hyperparameters*/
-    double h = 0.01;                    //step size
-    // UpdateMethod updateMethod = EXPLICIT_EULER;           // 0: implicit Euler; 1: sympletic Euler; 2: explicit midpoint;
+    double h = 0.01;                          // update step size
+    double radius = 10;                       // cohesion circle radius
+    double min_dist = 0.3;                    // saparetion circle radius
 
     /*Hyperparameters_end*/
 public:

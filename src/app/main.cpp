@@ -32,7 +32,7 @@ public:
         if(std::chrono::duration_cast<std::chrono::microseconds>(now-lastFrame).count() >= 10./60. * 1.e6)
         {
             if(keyDown[GLFW_KEY_R])
-                boids.initializePositions(currentMethod); // Everytime method is changed, press R to re-initialization
+                boids.initializePositions(currentMethod); // Everytime method has been changed, press R to re-initialization
             if(keyDown[GLFW_KEY_SPACE])
                 boids.pause();
             if(keyDown[GLFW_KEY_ESCAPE])
@@ -45,9 +45,9 @@ public:
 
         using namespace ImGui;
 
-       const char* names[] = {"FreeFall", "Separation", "Alignment", "Cohesion", "Leading", "Circle"};
+       const char* names[] = {"FreeFall", "Separation", "Alignment", "Cohesion", "Leading", "Circle", "Collision Avoidance"};
        Begin("Menu");
-       Combo("Boids Behavior", (int*)&currentMethod, names, 6);
+       Combo("Boids Behavior", (int*)&currentMethod, names, 7);
        End();
     }
 
@@ -118,8 +118,8 @@ private:
 
     MethodTypes currentMethod = FREEFALL;
     // UpdateRule updateRule = EXPLICIT_EULER;
-    // UpdateRule updateRule = SYMPLECTIC_EULER;
-    UpdateRule updateRule = EXPLICIT_MIDPOINT;
+    UpdateRule updateRule = SYMPLECTIC_EULER;
+    // UpdateRule updateRule = EXPLICIT_MIDPOINT;
     Boids boids = Boids(40,currentMethod);
     std::chrono::high_resolution_clock::time_point lastFrame;
 };

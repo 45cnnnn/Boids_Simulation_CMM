@@ -10,15 +10,22 @@ void Boids::updateBehavior(MethodTypes type, UpdateRule rule)
         updateParam(type, rule);
         break;
     case SEPARATION:
+        updateParam(type, rule);
         break;
     case ALIGNMENT:
+        updateParam(type, rule);
         break;
     case COHESION:
+        updateParam(type, rule);
         break;
     case LEADER:
+        updateParam(type, rule);
         break;
     case CIRCLE:
         updateParam(type, rule);
+        break;
+    case COLLISION_AVOIDANCE:
+        // updateParam(type, rule);
         break;
     default:
         break;
@@ -60,15 +67,146 @@ void Boids::updateParam(MethodTypes type, UpdateRule rule){
 VectorXT Boids::updateAcc(VectorXT x0, MethodTypes currentMethod){
     
     VectorXT a = VectorXT::Zero(n * dim);
-    if(currentMethod == FREEFALL){
+    switch (currentMethod)
+    {  
+    case FREEFALL:
         for(int i = 0; i < n; i++){
             a(2*i) = 0;
             a(2*i+1) = 9.8;
         }
+        break;
+
+    case SEPARATION:{
+        for(int i = 0; i < n; i++){
+            TV neighbour_position = TV::Zero();
+            TV neighbour_direction = TV::Zero();
+            TV neighbour_separation = TV::Zero();
+            int num_cohesion = 0;
+            int num_separation = 0;
+            for(int j =0; j < n; j++){
+                T distance = sqrt((x0(2*i)-x0(2*j))*(x0(2*i)-x0(2*j)) + (x0(2*i+1)-x0(2*j+1))*(x0(2*i+1)-x0(2*j+1)));
+                if(distance > 0 && distance <= radius){
+                    neighbour_position(0) += x0(2*j);
+                    neighbour_position(1) += x0(2*j+1);
+                    neighbour_direction(0) += velocities(2*j);
+                    neighbour_direction(1) += velocities(2*j+1);
+                    num_cohesion += 1;
+                }
+                if(distance > 0 && distance <= min_dist){
+                    neighbour_separation(0) -= x0(2*j) - x0(2*i);
+                    neighbour_separation(1) -= x0(2*j+1) - x0(2*i+1);
+                    num_separation += 1;
+                }
+
+            } 
+            if(num_cohesion != 0){
+                a(2*i) = 10*(neighbour_position(0)/num_cohesion - x0(2*i));
+                a(2*i+1) = 10*(neighbour_position(1)/num_cohesion - x0(2*i+1)); 
+                a(2*i) += neighbour_direction(0)/num_cohesion - velocities(2*i);
+                a(2*i+1) += neighbour_direction(1)/num_cohesion - velocities(2*i+1);
+            }
+            if(num_separation != 0){
+                a(2*i) += 10*neighbour_separation(0)/num_separation;
+                a(2*i+1) += 10*neighbour_separation(1)/num_separation;
+            }
+        }
+        break;
     }
-    if(currentMethod == CIRCLE){
+
+    case ALIGNMENT:{
+        for(int i = 0; i < n; i++){
+            TV neighbour_position = TV::Zero();
+            TV neighbour_direction = TV::Zero();
+            int num_neigh = 0;
+            for(int j =0; j < n; j++){
+                T distance = sqrt((x0(2*i)-x0(2*j))*(x0(2*i)-x0(2*j)) + (x0(2*i+1)-x0(2*j+1))*(x0(2*i+1)-x0(2*j+1)));
+                if(distance > 0 && distance <= radius){
+                    neighbour_position(0) += x0(2*j);
+                    neighbour_position(1) += x0(2*j+1);
+                    neighbour_direction(0) += velocities(2*j);
+                    neighbour_direction(1) += velocities(2*j+1);
+                    num_neigh += 1;
+                }
+            } 
+            if(num_neigh != 0){
+                a(2*i) = 10*(neighbour_position(0)/num_neigh - x0(2*i));
+                a(2*i+1) = 10*(neighbour_position(1)/num_neigh - x0(2*i+1)); 
+                a(2*i) += neighbour_direction(0)/num_neigh - velocities(2*i);
+                a(2*i+1) += neighbour_direction(1)/num_neigh - velocities(2*i+1);
+            }
+        }
+        break;
+    }
+
+
+    case COHESION:{
+        for(int i = 0; i < n; i++){
+            TV neighbour = TV::Zero();
+            int num_neigh = 0;
+            for(int j = 0; j < n; j++){
+                T distance = sqrt((x0(2*i)-x0(2*j))*(x0(2*i)-x0(2*j)) + (x0(2*i+1)-x0(2*j+1))*(x0(2*i+1)-x0(2*j+1)));
+                if(distance > 0 && distance <= radius){
+                    neighbour(0) += x0(2*j);
+                    neighbour(1) += x0(2*j+1);
+                    num_neigh += 1;
+                }
+            }
+            if(num_neigh != 0){
+                a(2*i) = 10*(neighbour(0)/num_neigh - x0(2*i));
+                a(2*i+1) = 10*(neighbour(1)/num_neigh - x0(2*i+1));
+            }
+            // else{
+            //     a(2*i) = 0;
+            //     a(2*i+1) = 0;
+            // }
+            }
+        break;
+    }  
+
+    case LEADER:
+        break;
+        
+    case CIRCLE:
         a = -x0;
+        break;
+
+    case COLLISION_AVOIDANCE:
+        break;
+
+    default:
+        break;
     }
+    // if(currentMethod == FREEFALL){
+    //     for(int i = 0; i < n; i++){
+    //         a(2*i) = 0;
+    //         a(2*i+1) = 9.8;
+    //     }
+    // }
+    // if(currentMethod == CIRCLE){
+    //     a = -x0;
+    // }
+    // if(currentMethod == COHESION){
+    //     for(int i = 0; i < n; i++){
+    //         TV neighbour = TV::Zero();
+    //         int num_neigh = 0;
+    //         for(int j = 0; j < n; j++){
+    //             T distance = sqrt((x0(2*i)-x0(2*j))*(x0(2*i)-x0(2*j)) + (x0(2*i+1)-x0(2*j+1))*(x0(2*i+1)-x0(2*j+1)));
+    //             if(distance > 0 && distance <= radius){
+    //                 neighbour(0) += x0(2*j);
+    //                 neighbour(1) += x0(2*j+1);
+    //                 num_neigh += 1;
+    //             }
+    //         }
+    //         if(num_neigh != 0){
+    //             a(2*i) = (neighbour(0)/num_neigh - x0(2*i));
+    //             a(2*i+1) = (neighbour(1)/num_neigh - x0(2*i+1));
+    //         }
+    //         // else{
+    //         //     a(2*i) = 0;
+    //         //     a(2*i+1) = 0;
+    //         // }
+    //         }
+    // }
     return a;
 }
 
