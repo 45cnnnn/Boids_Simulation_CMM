@@ -33,12 +33,14 @@ private:
     VectorXT accelerations;
     int n;
     bool update = false;
-    
+    TV leader_pos;
     /*Hyperparameters*/
-    double h = 0.01;                          // update step size
-    double radius = 10;                       // cohesion circle radius
-    double min_dist = 0.3;                    // saparetion circle radius
+    T h = 0.01;                         // update step size
+    T radius = 0.5;                      // cohesion circle radius
+    T min_dist = 0.05;                   // saparetion circle radius
 
+    T target = -1;                     // target point
+    T avoid_dist = 0.5;
     /*Hyperparameters_end*/
 public:
     Boids() :n(1) {}
@@ -69,6 +71,13 @@ public:
             }
             accelerations = VectorXT::Zero(n * dim);;
         }
+        //TODO : 初始位置避开障碍物
+        else if(type == COLLISION_AVOIDANCE){
+        positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}) + obs_radius*VectorXT::Ones(n * dim); 
+        velocities = VectorXT::Zero(n * dim);
+        accelerations = VectorXT::Zero(n * dim);;
+        leader_pos = {target,target};  
+        }
         else{
         positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}); 
         velocities = VectorXT::Zero(n * dim);
@@ -95,9 +104,15 @@ public:
     {
         return positions;
     }
+
+    TV getLeaderPos(){
+        return leader_pos;
+    }
     void updateParam(MethodTypes type, UpdateRule rule);
     // VectorXT updatePos(VectorXT x0, VectorXT v0);
     // VectorXT updateVel(VectorXT v0, VectorXT a0);
     VectorXT updateAcc(VectorXT x0, MethodTypes currentMethod);
+
+    T obs_radius = 0.3;  
 };
 #endif

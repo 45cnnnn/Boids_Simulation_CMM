@@ -45,10 +45,13 @@ public:
 
         using namespace ImGui;
 
-       const char* names[] = {"FreeFall", "Separation", "Alignment", "Cohesion", "Leading", "Circle", "Collision Avoidance"};
-       Begin("Menu");
-       Combo("Boids Behavior", (int*)&currentMethod, names, 7);
-       End();
+        const char* names[] = {"FreeFall", "Separation", "Alignment", "Cohesion", "Leading", "Circle", "Collision Avoidance"};
+        const char* update_names[] = {"Explicit EUler", "Symplectic Euler", "Explicit Midpoint"};
+        Begin("Menu");
+        Combo("Boids Behavior", (int*)&currentMethod, names, 7);
+        Combo("Update Method", (int*)&updateRule, update_names, 3);
+        End();
+
     }
 
     void drawNanoVG() override {
@@ -57,34 +60,82 @@ public:
         boids.updateBehavior(currentMethod, updateRule);
         
         VectorXT boids_pos = boids.getPositions();
-
         auto shift_01_to_screen = [](TV pos_01, T scale, T width, T height)
         {
             return TV(0.5  * width + scale * pos_01[0] * width, 0.5 * height + scale * pos_01[1] * height);
         };
 
-        for(int i = 0; i < boids.getParticleNumber(); i++)
-        {
-            TV pos = boids_pos.segment<2>(i * 2);
-            nvgBeginPath(vg);
-    
-            // just map position from 01 simulation space to scree space
-            // feel free to make changes
-            // the only thing that matters is you have pos computed correctly from your simulation
-            T scale = 0.3;
-            TV screen_pos = shift_01_to_screen(TV(pos[0], pos[1]), scale, width, height);
-            nvgCircle(vg, screen_pos[0], screen_pos[1], 2.f);
-            nvgCircle(vg, 0.5  * width, 0.5 * height, 5.f);
-            nvgFillColor(vg, COLOR_OUT);
-            nvgFill(vg);
+        if(currentMethod == COLLISION_AVOIDANCE){
+            TV target_pos = boids.getLeaderPos();
+            
+            for(int i = 0; i < boids.getParticleNumber(); i++)
+            {
+                TV pos = boids_pos.segment<2>(i * 2);
+                nvgBeginPath(vg);
+        
+                // just map position from 01 simulation space to scree space
+                // feel free to make changes
+                // the only thing that matters is you have pos computed correctly from your simulation
+                T scale = 0.3;
+                TV screen_pos = shift_01_to_screen(TV(pos[0], pos[1]), scale, width, height);
+                TV screen_target_pos = shift_01_to_screen(TV(target_pos[0], target_pos[1]), scale, width, height);
+                nvgCircle(vg, screen_pos[0], screen_pos[1], 2.f);
+                nvgFillColor(vg, COLOR_OUT);
+                nvgFill(vg);
 
-            //Origin
-            nvgBeginPath(vg);
-            nvgCircle(vg, 0.5  * width, 0.5 * height, 5.f);
-            nvgFillColor(vg, COLOR_IN);
-            nvgFill(vg);            
+                //Obstacle
+                nvgBeginPath(vg);
+                nvgCircle(vg, 0.5  * width, 0.5 * height, boids.obs_radius*scale*width);
+                nvgFillColor(vg, COLOR_IN);
+                nvgFill(vg);    
 
+                // Target
+                nvgBeginPath(vg);
+                nvgCircle(vg, screen_target_pos[0], screen_target_pos[1], 5.f);
+                nvgFillColor(vg, COLOR_SOLVED);
+                nvgFill(vg);          
+            }
         }
+        else{
+
+            for(int i = 0; i < boids.getParticleNumber(); i++)
+            {
+                TV pos = boids_pos.segment<2>(i * 2);
+                nvgBeginPath(vg);
+        
+                // just map position from 01 simulation space to scree space
+                // feel free to make changes
+                // the only thing that matters is you have pos computed correctly from your simulation
+                T scale = 0.3;
+                TV screen_pos = shift_01_to_screen(TV(pos[0], pos[1]), scale, width, height);
+                nvgCircle(vg, screen_pos[0], screen_pos[1], 2.f);
+                nvgFillColor(vg, COLOR_OUT);
+                nvgFill(vg);            
+            }
+        }
+
+        // for(int i = 0; i < boids.getParticleNumber(); i++)
+        // {
+        //     TV pos = boids_pos.segment<2>(i * 2);
+        //     nvgBeginPath(vg);
+    
+        //     // just map position from 01 simulation space to scree space
+        //     // feel free to make changes
+        //     // the only thing that matters is you have pos computed correctly from your simulation
+        //     T scale = 0.3;
+        //     TV screen_pos = shift_01_to_screen(TV(pos[0], pos[1]), scale, width, height);
+        //     nvgCircle(vg, screen_pos[0], screen_pos[1], 2.f);
+        //     nvgCircle(vg, 0.5  * width, 0.5 * height, 5.f);
+        //     nvgFillColor(vg, COLOR_OUT);
+        //     nvgFill(vg);
+
+        //     //Origin
+        //     nvgBeginPath(vg);
+        //     nvgCircle(vg, 0.5  * width, 0.5 * height, 50.f);
+        //     nvgFillColor(vg, COLOR_IN);
+        //     nvgFill(vg);            
+
+        // }
 
     }
 
