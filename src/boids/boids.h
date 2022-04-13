@@ -109,6 +109,9 @@ public:
     TV getLeaderPos(){
         return leader_pos;
     }
+    TV getLeaderVel(){
+        return leader_vel;
+    }
     TV getObsPos(){
         return obs_pos;
     }
@@ -119,17 +122,19 @@ public:
 
     /*Hyperparameters*/
     float cohesion_r = 0.5;                      // cohesion range radius
-    float separation_r = 0.05;                   // saparetion ramge radius
+    float separation_r = 0.1;                   // saparetion ramge radius
     float alignment_r = 0.5;                     // aligment range radius
 
     float target = -1;                     // target point
-    float sight = 0.1;
+    float sight = 0.5;
+    float avoid_distance = 0.1;
 
     bool obs_flag = 0;
-    float obs_radius = 0.2; 
+    float obs_radius = 0.1; 
     float h = 0.01;
 
-    TV leader_pos;
+    TV leader_pos = TV::Zero();
+    TV leader_vel = TV::Zero();
     TV obs_pos = TV::Zero();  
     /*Hyperparameters_end*/
                        // update step size

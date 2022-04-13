@@ -50,21 +50,30 @@ public:
         Begin("Menu");
         Combo("Boids Behavior", (int*)&currentMethod, names, 6);
         Combo("Update Method", (int*)&updateRule, update_names, 3);
-        SliderFloat("Step Size", &boids.h, 0.01, 0.1);
+        SliderFloat("Step Size", &boids.h, 0.01, 1);
         Checkbox("Obstacle", &boids.obs_flag);
         if(boids.obs_flag){
             SliderFloat("Obstacle Size", &boids.obs_radius, 0.01, 0.5);
-            SliderFloat("Vision range", &boids.sight, 0.0, 0.5);
+            SliderFloat("Foresight distance (avoid collision)", &boids.avoid_distance, 0.0, 0.5);
         }
-        if(currentMethod == COHESION || currentMethod == SEPARATION || currentMethod == ALIGNMENT){
-            SliderFloat("Cohesion Range", &boids.cohesion_r, 0.0, 0.5);
+        if(currentMethod == COHESION){
+            SliderFloat("Cohesion Range", &boids.cohesion_r, 0.0, 1.0);
         }
-        if(currentMethod == ALIGNMENT || currentMethod == SEPARATION){
-            SliderFloat("Alignment Range", &boids.alignment_r, 0.0, 0.5);
+        if(currentMethod == ALIGNMENT){
+            SliderFloat("Cohesion Range", &boids.cohesion_r, 0.0, 1.0);
+            SliderFloat("Alignment Range", &boids.alignment_r, 0.0, 1.0);
         }
         if(currentMethod == SEPARATION){
-            SliderFloat("Separation Range", &boids.separation_r, 0.0, 0.5);
-        }       
+            SliderFloat("Cohesion Range", &boids.cohesion_r, 0.0, 1.0);
+            SliderFloat("Alignment Range", &boids.alignment_r, 0.0, 1.0);
+            SliderFloat("Separation Range", &boids.separation_r, 0.0, 1.0);
+        } 
+        if(currentMethod == LEADER){
+            SliderFloat("Cohesion Range", &boids.cohesion_r, 0.0, 1.0);
+            SliderFloat("Alignment Range", &boids.alignment_r, 0.0, 2.0);
+            SliderFloat("Separation Range", &boids.separation_r, 0.0, 1.0);
+            SliderFloat("Follow distance", &boids.sight, 0.0, 1.0);
+        }    
         // SliderFloat("Obs", (float*)&boids.obs_radius, 0.0f, 1.0f);
         End();
 
@@ -82,11 +91,15 @@ public:
         {
             return TV(0.5 * width + scale * pos_01[0] * width, 0.5 * height + scale * pos_01[1] * height);
         };
-
+        auto shift_screen_to_01 = [](TV pos_01, T scale, T width, T height)
+        {
+            return TV((pos_01[0] - 0.5 * width)/width/scale, (pos_01[1] - 0.5 * height) / height / scale);
+        };
+        T scale = 0.5;
         if(boids.obs_flag){
             TV target_pos = boids.getLeaderPos();
             TV obs_pos = boids.getObsPos();
-            
+
             for(int i = 0; i < boids.getParticleNumber(); i++)
             {
                 TV pos = boids_pos.segment<2>(i * 2);
@@ -95,25 +108,35 @@ public:
                 // just map position from 01 simulation space to scree space
                 // feel free to make changes
                 // the only thing that matters is you have pos computed correctly from your simulation
-                T scale = 0.5;
+                
                 TV screen_pos = shift_01_to_screen(TV(pos[0], pos[1]), scale, width, height);
                 TV screen_obs_pos = shift_01_to_screen(TV(obs_pos[0], obs_pos[1]), scale, width, height);
                 nvgCircle(vg, screen_pos[0], screen_pos[1], 2.f);
                 nvgFillColor(vg, COLOR_OUT);
                 nvgFill(vg);
 
-                //Obstacle
-                nvgBeginPath(vg);
-                nvgCircle(vg, screen_obs_pos[0], screen_obs_pos[1], boids.obs_radius*width*scale);
-                nvgFillColor(vg, COLOR_IN);
-                nvgFill(vg);    
-
-                // // Target
-                // nvgBeginPath(vg);
-                // nvgCircle(vg, screen_target_pos[0], screen_target_pos[1], 5.f);
-                // nvgFillColor(vg, COLOR_SOLVED);
-                // nvgFill(vg);          
+        
             }
+            TV screen_obs_pos = shift_01_to_screen(TV(obs_pos[0], obs_pos[1]), scale, width, height);                //Obstacle
+            nvgBeginPath(vg);
+            nvgCircle(vg, screen_obs_pos[0], screen_obs_pos[1], boids.obs_radius*width*scale);
+            nvgFillColor(vg, COLOR_IN);
+            nvgFill(vg);
+
+            if(currentMethod == LEADER){
+                TV mouse_screen_pos = TV(mouseState.lastMouseX, mouseState.lastMouseY);
+                nvgBeginPath(vg);
+                nvgCircle(vg, mouse_screen_pos[0], mouse_screen_pos[1], 5.f);
+                nvgFillColor(vg, COLOR_SOLVED);
+                nvgFill(vg); 
+                boids.leader_pos = shift_screen_to_01(mouse_screen_pos, scale, width, height);
+            }
+            // // Origin
+            // nvgBeginPath(vg);
+            // nvgCircle(vg, 0.5*width, 0.5*height, 5.f);
+            // nvgFillColor(vg, COLOR_SOLVED);
+            // nvgFill(vg);  
+
         }
         else{
 
@@ -125,12 +148,29 @@ public:
                 // just map position from 01 simulation space to scree space
                 // feel free to make changes
                 // the only thing that matters is you have pos computed correctly from your simulation
-                T scale = 0.5;
                 TV screen_pos = shift_01_to_screen(TV(pos[0], pos[1]), scale, width, height);
                 nvgCircle(vg, screen_pos[0], screen_pos[1], 2.f);
                 nvgFillColor(vg, COLOR_OUT);
                 nvgFill(vg);            
             }
+
+            // // Origin
+            // nvgBeginPath(vg);
+            // nvgCircle(vg, 0.5*width, 0.5*height,5.f);
+            // nvgFillColor(vg, COLOR_SOLVED);
+            // nvgFill(vg);  
+
+            if(currentMethod == LEADER){
+                TV mouse_screen_pos = TV(mouseState.lastMouseX, mouseState.lastMouseY);
+                TV mouse_screen_vel = TV(mouseState.mouseMoveX, mouseState.mouseMoveY);
+                nvgBeginPath(vg);
+                nvgCircle(vg, mouse_screen_pos[0], mouse_screen_pos[1], 5.f);
+                nvgFillColor(vg, COLOR_SOLVED);
+                nvgFill(vg); 
+                boids.leader_pos = shift_screen_to_01(mouse_screen_pos, scale, width, height);
+                boids.leader_vel = shift_screen_to_01(mouse_screen_vel, scale, width, height);
+            }
+
         }
 
         // for(int i = 0; i < boids.getParticleNumber(); i++)

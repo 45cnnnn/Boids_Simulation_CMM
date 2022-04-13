@@ -86,7 +86,7 @@ VectorXT Boids::updateAcc(VectorXT x0, MethodTypes type){
             int num_alignment = 0;
             int num_separation = 0;
             for(int j =0; j < n; j++){
-                T distance = sqrt((x0(2*i)-x0(2*j))*(x0(2*i)-x0(2*j)) + (x0(2*i+1)-x0(2*j+1))*(x0(2*i+1)-x0(2*j+1)));
+                T distance = sqrt(pow((x0(2*i)-x0(2*j)), 2) + pow((x0(2*i+1)-x0(2*j+1)), 2));
                 if(distance > 0 && distance <= cohesion_r){
                     neighbour_position(0) += x0(2*j);
                     neighbour_position(1) += x0(2*j+1);
@@ -126,7 +126,7 @@ VectorXT Boids::updateAcc(VectorXT x0, MethodTypes type){
             int num_cohesion = 0;
             int num_alignment = 0;
             for(int j =0; j < n; j++){
-                T distance = sqrt((x0(2*i)-x0(2*j))*(x0(2*i)-x0(2*j)) + (x0(2*i+1)-x0(2*j+1))*(x0(2*i+1)-x0(2*j+1)));
+                T distance = sqrt(pow((x0(2*i)-x0(2*j)), 2) + pow((x0(2*i+1)-x0(2*j+1)), 2));
                 if(distance > 0 && distance <= cohesion_r){
                     neighbour_position(0) += x0(2*j);
                     neighbour_position(1) += x0(2*j+1);
@@ -156,7 +156,7 @@ VectorXT Boids::updateAcc(VectorXT x0, MethodTypes type){
             TV neighbour = TV::Zero();
             int num_neigh = 0;
             for(int j = 0; j < n; j++){
-                T distance = sqrt((x0(2*i)-x0(2*j))*(x0(2*i)-x0(2*j)) + (x0(2*i+1)-x0(2*j+1))*(x0(2*i+1)-x0(2*j+1)));
+                T distance = sqrt(pow((x0(2*i)-x0(2*j)), 2) + pow((x0(2*i+1)-x0(2*j+1)), 2));
                 if(distance > 0 && distance <= cohesion_r){
                     neighbour(0) += x0(2*j);
                     neighbour(1) += x0(2*j+1);
@@ -175,8 +175,60 @@ VectorXT Boids::updateAcc(VectorXT x0, MethodTypes type){
         break;
     }  
 
-    case LEADER:
+    case LEADER:{
+        for(int i =0; i < n; i++){
+            TV target_pos = getLeaderPos();
+            TV target_vel = getLeaderVel();
+            T distance_target = sqrt(pow((x0(2*i)-target_pos(0)), 2) + pow((x0(2*i+1)-target_pos(1)), 2));
+            TV neighbour_position = TV::Zero();
+            TV neighbour_direction = TV::Zero();
+            TV neighbour_separation = TV::Zero();
+            int num_cohesion = 0;
+            int num_alignment = 0;
+            int num_separation = 0;
+            for(int j =0; j < n; j++){
+                T distance = sqrt(pow((x0(2*i)-x0(2*j)), 2) + pow((x0(2*i+1)-x0(2*j+1)), 2));
+                if(distance > 0 && distance <= cohesion_r){
+                    neighbour_position(0) += x0(2*j);
+                    neighbour_position(1) += x0(2*j+1);
+                    num_cohesion += 1;
+                }
+                if(distance > 0 && distance <= alignment_r){
+                    neighbour_direction(0) += velocities(2*j);
+                    neighbour_direction(1) += velocities(2*j+1);
+                    num_alignment += 1;
+                }
+                if(distance > 0 && distance <= separation_r){
+                    neighbour_separation(0) -= x0(2*j) - x0(2*i);
+                    neighbour_separation(1) -= x0(2*j+1) - x0(2*i+1);
+                    num_separation += 1;
+                }
+            } 
+            if(num_cohesion != 0){
+                a(2*i) = 10*(neighbour_position(0)/num_cohesion - x0(2*i));
+                a(2*i+1) = 10*(neighbour_position(1)/num_cohesion - x0(2*i+1)); 
+            }
+            if(num_alignment != 0){
+                a(2*i) += neighbour_direction(0)/num_cohesion - velocities(2*i);
+                a(2*i+1) += neighbour_direction(1)/num_cohesion - velocities(2*i+1);
+            }
+            if(num_separation != 0){
+                a(2*i) += 150*neighbour_separation(0)/num_separation;
+                a(2*i+1) += 150*neighbour_separation(1)/num_separation;
+            }
+            if(distance_target > separation_r && distance_target <= sight){
+                a(2*i) += 200*(target_pos(0) - x0(2*i)) * distance_target + (target_vel(0)- velocities(2*i));
+                a(2*i+1) += 200*(target_pos(1) - x0(2*i+1)) * distance_target + (target_vel(1) - velocities(2*i+1));
+            }
+            if(distance_target <= separation_r){
+                a(2*i) -= 5 * (target_pos(0) - x0(2*i));
+                a(2*i+1) -= 5 * (target_pos(1) - x0(2*i+1));
+
+            }
+
+        }
         break;
+    }
         
     case CIRCLE:
         a = -x0;
@@ -233,8 +285,8 @@ VectorXT Boids::updateAcc(VectorXT x0, MethodTypes type){
     }
     if(obs_flag){
         for(int i = 0; i < n; i++){
-            T distance_obs = sqrt((x0(2*i)-obs_pos(0))*(x0(2*i)-obs_pos(0)) + (x0(2*i+1)-obs_pos(1))*(x0(2*i+1)-obs_pos(1)));
-            if(distance_obs > obs_radius && distance_obs <= obs_radius + sight){
+            T distance_obs = sqrt(pow((x0(2*i)-obs_pos(0)), 2) + pow((x0(2*i+1)-obs_pos(1)), 2));
+            if(distance_obs > obs_radius && distance_obs <= obs_radius + avoid_distance){
                 a(2*i) +=  5*(x0(2*i) - obs_pos(0))/pow(distance_obs, 2);
                 a(2*i+1) +=  5*(x0(2*i+1) - obs_pos(1))/pow(distance_obs,2); 
             }
