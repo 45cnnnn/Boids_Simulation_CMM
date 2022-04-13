@@ -11,10 +11,10 @@ using Matrix = Eigen::Matrix<T, n, m, 0, n, m>;
 
 // add more for yours
 enum MethodTypes {
-        FREEFALL=0, SEPARATION=1, ALIGNMENT=2, COHESION=3, LEADER=4, CIRCLE=5, COLLISION_AVOIDANCE=6
+        FREEFALL=0, SEPARATION=1, ALIGNMENT=2, COHESION=3, LEADER=4, CIRCLE=5
     };
 enum UpdateRule{
-    EXPLICIT_EULER, SYMPLECTIC_EULER, EXPLICIT_MIDPOINT
+    EXPLICIT_EULER=0, SYMPLECTIC_EULER=1, EXPLICIT_MIDPOINT=2
 };
 
 using T = double;
@@ -33,15 +33,7 @@ private:
     VectorXT accelerations;
     int n;
     bool update = false;
-    TV leader_pos;
-    /*Hyperparameters*/
-    T h = 0.01;                         // update step size
-    T radius = 0.5;                      // cohesion circle radius
-    T min_dist = 0.05;                   // saparetion circle radius
 
-    T target = -1;                     // target point
-    T avoid_dist = 0.5;
-    /*Hyperparameters_end*/
 public:
     Boids() :n(1) {}
     Boids(int n) :n(n) {
@@ -56,14 +48,25 @@ public:
     int getParticleNumber() { return n; }
     void initializePositions()
     {
-        positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}); 
+        positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}) - 0.5*VectorXT::Ones(n*dim); 
         velocities = VectorXT::Zero(n * dim);
         accelerations = VectorXT::Zero(n * dim);;
     }
     void initializePositions(MethodTypes type)
-    {
+    {   
+        if(obs_flag){
+            positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}) - 0.5*VectorXT::Ones(n * dim);
+            for(int i = 0; i < dim*n; i++){
+                if(positions(i) >= 0 && positions(i) <= obs_radius){ positions(i) += obs_radius;}
+                else if(positions(i) <= 0 && positions(i) >= -obs_radius){positions(i) -= obs_radius;}
+            }
+        }
+        else{
+            positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}) - 0.5*VectorXT::Ones(n*dim); 
+     
+        }
+
         if(type == CIRCLE){
-            positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}); 
             velocities = VectorXT::Zero(n * dim);
             for(int i = 0; i < n; i++){
                 velocities(2*i) = -positions(2*i+1);
@@ -72,14 +75,12 @@ public:
             accelerations = VectorXT::Zero(n * dim);;
         }
         //TODO : 初始位置避开障碍物
-        else if(type == COLLISION_AVOIDANCE){
-        positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}) + obs_radius*VectorXT::Ones(n * dim); 
-        velocities = VectorXT::Zero(n * dim);
-        accelerations = VectorXT::Zero(n * dim);;
-        leader_pos = {target,target};  
-        }
+        // else if(type == COLLISION_AVOIDANCE){
+        // velocities = VectorXT::Zero(n * dim);
+        // accelerations = VectorXT::Zero(n * dim);;
+        // leader_pos = {target,target};  
+        // }
         else{
-        positions = VectorXT::Zero(n * dim).unaryExpr([&](T dummy){return static_cast <T> (rand()) / static_cast <T> (RAND_MAX);}); 
         velocities = VectorXT::Zero(n * dim);
         accelerations = VectorXT::Zero(n * dim);;            
         }
@@ -108,11 +109,29 @@ public:
     TV getLeaderPos(){
         return leader_pos;
     }
+    TV getObsPos(){
+        return obs_pos;
+    }
     void updateParam(MethodTypes type, UpdateRule rule);
     // VectorXT updatePos(VectorXT x0, VectorXT v0);
     // VectorXT updateVel(VectorXT v0, VectorXT a0);
     VectorXT updateAcc(VectorXT x0, MethodTypes currentMethod);
 
-    T obs_radius = 0.3;  
+    /*Hyperparameters*/
+    float cohesion_r = 0.5;                      // cohesion range radius
+    float separation_r = 0.05;                   // saparetion ramge radius
+    float alignment_r = 0.5;                     // aligment range radius
+
+    float target = -1;                     // target point
+    float sight = 0.1;
+
+    bool obs_flag = 0;
+    float obs_radius = 0.2; 
+    float h = 0.01;
+
+    TV leader_pos;
+    TV obs_pos = TV::Zero();  
+    /*Hyperparameters_end*/
+                       // update step size
 };
 #endif

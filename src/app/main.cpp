@@ -40,17 +40,35 @@ public:
             lastFrame = now;
         }
     }
-    //TODO : add update rules in GUI
+    //TODO : add something in GUI
     void drawImGui() override {
 
         using namespace ImGui;
 
-        const char* names[] = {"FreeFall", "Separation", "Alignment", "Cohesion", "Leading", "Circle", "Collision Avoidance"};
+        const char* names[] = {"FreeFall", "Separation", "Alignment", "Cohesion", "Leading", "Circle"};
         const char* update_names[] = {"Explicit EUler", "Symplectic Euler", "Explicit Midpoint"};
         Begin("Menu");
-        Combo("Boids Behavior", (int*)&currentMethod, names, 7);
+        Combo("Boids Behavior", (int*)&currentMethod, names, 6);
         Combo("Update Method", (int*)&updateRule, update_names, 3);
+        SliderFloat("Step Size", &boids.h, 0.01, 0.1);
+        Checkbox("Obstacle", &boids.obs_flag);
+        if(boids.obs_flag){
+            SliderFloat("Obstacle Size", &boids.obs_radius, 0.01, 0.5);
+            SliderFloat("Vision range", &boids.sight, 0.0, 0.5);
+        }
+        if(currentMethod == COHESION || currentMethod == SEPARATION || currentMethod == ALIGNMENT){
+            SliderFloat("Cohesion Range", &boids.cohesion_r, 0.0, 0.5);
+        }
+        if(currentMethod == ALIGNMENT || currentMethod == SEPARATION){
+            SliderFloat("Alignment Range", &boids.alignment_r, 0.0, 0.5);
+        }
+        if(currentMethod == SEPARATION){
+            SliderFloat("Separation Range", &boids.separation_r, 0.0, 0.5);
+        }       
+        // SliderFloat("Obs", (float*)&boids.obs_radius, 0.0f, 1.0f);
         End();
+
+
 
     }
 
@@ -62,11 +80,12 @@ public:
         VectorXT boids_pos = boids.getPositions();
         auto shift_01_to_screen = [](TV pos_01, T scale, T width, T height)
         {
-            return TV(0.5  * width + scale * pos_01[0] * width, 0.5 * height + scale * pos_01[1] * height);
+            return TV(0.5 * width + scale * pos_01[0] * width, 0.5 * height + scale * pos_01[1] * height);
         };
 
-        if(currentMethod == COLLISION_AVOIDANCE){
+        if(boids.obs_flag){
             TV target_pos = boids.getLeaderPos();
+            TV obs_pos = boids.getObsPos();
             
             for(int i = 0; i < boids.getParticleNumber(); i++)
             {
@@ -76,24 +95,24 @@ public:
                 // just map position from 01 simulation space to scree space
                 // feel free to make changes
                 // the only thing that matters is you have pos computed correctly from your simulation
-                T scale = 0.3;
+                T scale = 0.5;
                 TV screen_pos = shift_01_to_screen(TV(pos[0], pos[1]), scale, width, height);
-                TV screen_target_pos = shift_01_to_screen(TV(target_pos[0], target_pos[1]), scale, width, height);
+                TV screen_obs_pos = shift_01_to_screen(TV(obs_pos[0], obs_pos[1]), scale, width, height);
                 nvgCircle(vg, screen_pos[0], screen_pos[1], 2.f);
                 nvgFillColor(vg, COLOR_OUT);
                 nvgFill(vg);
 
                 //Obstacle
                 nvgBeginPath(vg);
-                nvgCircle(vg, 0.5  * width, 0.5 * height, boids.obs_radius*scale*width);
+                nvgCircle(vg, screen_obs_pos[0], screen_obs_pos[1], boids.obs_radius*width*scale);
                 nvgFillColor(vg, COLOR_IN);
                 nvgFill(vg);    
 
-                // Target
-                nvgBeginPath(vg);
-                nvgCircle(vg, screen_target_pos[0], screen_target_pos[1], 5.f);
-                nvgFillColor(vg, COLOR_SOLVED);
-                nvgFill(vg);          
+                // // Target
+                // nvgBeginPath(vg);
+                // nvgCircle(vg, screen_target_pos[0], screen_target_pos[1], 5.f);
+                // nvgFillColor(vg, COLOR_SOLVED);
+                // nvgFill(vg);          
             }
         }
         else{
@@ -106,7 +125,7 @@ public:
                 // just map position from 01 simulation space to scree space
                 // feel free to make changes
                 // the only thing that matters is you have pos computed correctly from your simulation
-                T scale = 0.3;
+                T scale = 0.5;
                 TV screen_pos = shift_01_to_screen(TV(pos[0], pos[1]), scale, width, height);
                 nvgCircle(vg, screen_pos[0], screen_pos[1], 2.f);
                 nvgFillColor(vg, COLOR_OUT);
