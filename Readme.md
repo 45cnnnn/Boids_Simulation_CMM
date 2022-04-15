@@ -5,8 +5,7 @@
 In this assignment, I implement a particle system for simulating the behavior of birds based on *Boids*[[Reynolds(1987)]](https://medium.com/swlh/boids-a-simple-way-to-simulate-how-birds-flock-in-processing-69057930c229). A short introduction from the author is available [online](https://cs.stanford.edu/people/eroberts/courses/soco/projects/2008-09/modeling-natural-systems/boids.html).
 
 ![figure: overview](videos/interface.png)
-
-<center>Figure 1: Overview</center>
+<p align="center">Figure 1: Overview</p>
 
 As shown in Figure 1, different behaviors(*Freefall, Cohesion, Alignment, Separation, Leading*), integration schemes(*Explicit Euler, Symplectic Euler and Explicit midpoint) can be chosen from the interface. You can also set different parameters to test the behavior of  boids.
 
