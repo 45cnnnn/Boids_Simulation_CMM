@@ -241,8 +241,8 @@ VectorXT Boids::updateAcc(VectorXT x0, MethodTypes type){
                 a(2*i+1) += 150*neighbour_separation(1)/num_separation;
             }
             if(distance_target > separation_r && distance_target <= sight){
-                a(2*i) += 200*(target_pos(0) - x0(2*i)) * distance_target + 2*(target_vel(0)- velocities(2*i));
-                a(2*i+1) += 200*(target_pos(1) - x0(2*i+1)) * distance_target + 2*(target_vel(1) - velocities(2*i+1));
+                a(2*i) += 150*(target_pos(0) - x0(2*i)) * distance_target + 2*(target_vel(0)- velocities(2*i));
+                a(2*i+1) += 150*(target_pos(1) - x0(2*i+1)) * distance_target + 2*(target_vel(1) - velocities(2*i+1));
             }
             if(distance_target >0 && distance_target <= separation_r){
                 a(2*i) -= 5 * (target_pos(0) - x0(2*i)) / distance_target;

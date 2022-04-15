@@ -71,14 +71,14 @@ public:
         } 
         if(currentMethod == LEADER){
             SliderFloat("Cohesion Range", &boids.cohesion_r, 0.0, 1.0);
-            SliderFloat("Alignment Range", &boids.alignment_r, 0.0, 2.0);
+            SliderFloat("Alignment Range", &boids.alignment_r, 0.0, 1.0);
             SliderFloat("Separation Range", &boids.separation_r, 0.0, 1.0);
             SliderFloat("Follow distance", &boids.sight, 0.0, 1.0);
         }    
         // SliderFloat("Obs", (float*)&boids.obs_radius, 0.0f, 1.0f);
         if(currentMethod == CA){
             SliderFloat("Cohesion Range", &boids.cohesion_r, 0.0, 1.0);
-            SliderFloat("Alignment Range", &boids.alignment_r, 0.0, 2.0);
+            SliderFloat("Alignment Range", &boids.alignment_r, 0.0, 1.0);
             SliderFloat("Separation Range", &boids.separation_r, 0.0, 1.0);
             SliderFloat("Follow distance", &boids.sight, 0.0, 1.0);
         }

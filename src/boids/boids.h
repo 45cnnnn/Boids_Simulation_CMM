@@ -142,11 +142,11 @@ public:
 
     /*Hyperparameters*/
     float cohesion_r = 0.5;                      // cohesion range radius
-    float separation_r = 0.15;                   // saparetion ramge radius
+    float separation_r = 0.1;                   // saparetion ramge radius
     float alignment_r = 0.5;                     // aligment range radius
 
     float target = -1;                           // target point
-    float sight = 0.5;
+    float sight = 0.55;
     float avoid_distance = 0.1;
 
     bool obs_flag = 0;
